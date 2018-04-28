@@ -1,0 +1,1 @@
+Put IP addresses to ban from your board in this text file.

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=5" name="viewport">
+
+	<style>body{font-family:Segoe UI,Arial,sans-serif;color:#fff;background-color:#0f0f0f;margin:0;word-wrap:break-word}button{padding:3px 6px}h4{color:#7c2d2d!important}input,p{color:#cdcdcd!important;overflow:auto}img,video{width:25%}img:active,video:active{width:50%}audio,img,video{float:left;padding-right:8px;padding-bottom:8px}a,button{text-decoration:none;color:#6e6e95!important}input{border-bottom:1px solid rgba(0,0,0,.12)!important;transition:border-bottom-color .2s;background-color:#282828!important;box-sizing:border-box;padding-left:4px;width:100%}input:focus{border-bottom:1px solid #f44336!important}.post,button{background-color:#1c1c1c}button,input{font:inherit;outline:0;border:0}.post{border:3px solid #1c1c1c;border-radius:2px;box-shadow:0 2px 2px 0 rgba(0,0,0,.14),0 3px 1px -2px rgba(0,0,0,.2),0 1px 5px 0 rgba(0,0,0,.12)}#post{padding-left:8px;padding-right:8px}.topbar{padding:10px;border-bottom:1px solid #000;background-color:#1c1c1c;display:none}.posts{padding-left:18%;padding-right:18%}.time{float:right;color:#999!important;font-size:12px}@media screen and (max-width:800px){.posts{padding-left:20px;padding-right:20px}img:active,video:active{width:100%}}</style>
+
+	<title>KatBoard Alpha</title>
+
+	<script>
+	var messageSocket
+
+	function load() {
+
+
+	messageSocket = new ReconnectingWebSocket("wss://" + window.location.host + window.location.pathname + "/messagesocket" + window.location.search);
+
+	messageSocket.onopen = function(event) {
+		document.getElementById("posts").innerHTML = '<div class="post" id="post"><p>Loading posts...</p></div>';
+		document.getElementById("topbar").style.display = "flex";
+	}
+
+	messageSocket.onmessage = function(event) {
+		var message = event.data;
+		document.getElementById("posts").innerHTML = message;
+		if (window.location.search == "") {
+			document.getElementById("posts").innerHTML += '<div class="post" id="post"><p><a href="' + window.location.href + '/newboard">Click here to create a new board!</a></p></div><br>';
+		}
+	};
+
+	messageSocket.onclose = function(event) {
+		document.getElementById("posts").innerHTML = '<div class="post" id="post"><h4>Error : You have been disconnected from the server.</h4><p>Attempting to reconnect...</p></div><br>';
+		document.getElementById("topbar").style.display = "none";
+	};
+
+
+	}
+
+	function send() {
+		var text = document.getElementById("text").value;
+		messageSocket.send(text);
+		document.getElementById("text").value = "";
+	}
+	</script>
+	<script defer src="https://cdn.kittyhacker101.tk/Static/wsreconnect.js"></script>
+</head>
+<body onload="load()">
+	<div id="topbar" class="topbar">
+		<input id="text" onkeydown="if (event.keyCode == 13) {send()}" placeholder="Type something to post..." type="text">
+		<button onclick="send()" type="button">Send</button>
+	</div>
+	<p></p>
+	<div id="posts" class="posts">
+		<div class="post l"><p>Waiting for network connection...</p></div>
+		<noscript>
+			<div class="post" id="post"><h4>Sorry, but KatBoard requires JavaScript to work properly.</h4></div>
+			<style>.l {display: none}</style>
+		</noscript>
+	</div>
+</body>
+</html>
