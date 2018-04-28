@@ -131,5 +131,5 @@ func newBoard(w http.ResponseWriter, r *http.Request, userid string) {
 	f.WriteString("KatBoard<<Note : KatBoard is currently a work in progress, so boards may be cleared or removed at any time.<\n")
 	f.Close()
 
-	http.Redirect(w, r, "https://kittyhacker101.tk/chat?board="+new, http.StatusTemporaryRedirect)
+	http.Redirect(w, r, "/?board="+new, http.StatusTemporaryRedirect)
 }
