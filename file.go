@@ -82,7 +82,9 @@ func getPostContent(file *os.File, msg int) string {
 		tstamp := postarray[3]
 		t, err := time.Parse(time.UnixDate, postarray[3])
 		if err == nil {
-			if time.Since(t).Hours() > 1 {
+			if time.Since(t).Hours() > 24 {
+				tstamp = strconv.FormatFloat(time.Since(t).Hours()/24, 'f', 1, 64) + " days ago"
+			} else if time.Since(t).Hours() > 1 {
 				tstamp = strconv.FormatFloat(time.Since(t).Hours(), 'f', 0, 64) + " hours ago"
 			} else if time.Since(t).Minutes() > 1 {
 				tstamp = strconv.FormatFloat(time.Since(t).Minutes(), 'f', 0, 64) + " minutes ago"
