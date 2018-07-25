@@ -1,7 +1,6 @@
 # KatBoard
 A work in progress social media network, inspired by imageboards, with modern material design.
-Want to try it out? Go to https://katboard.kittyhacker101.tk/ to try it out! It will ask you for a username and password to use, set it to whatever you want, or set your password to as "anon" to post anonymously.
-Note : This program is still a work in progress, and there will be occational downtime.
+Want to try it out? Go to http://y2pmaobkwg3wdnke.onion/ to try it out! Note : You will need to use the Tor browser to connect to .onion links.
 
 # More info
 More documentation for KatBoard will be coming soon.
