@@ -6,24 +6,24 @@ import (
 	"encoding/base64"
 	"fmt"
 	"html/template"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"runtime/debug"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
 )
 
-var banList []string
-
 func runAuth(w http.ResponseWriter, r *http.Request) (string, string) {
-	w.Header().Set("WWW-Authenticate", `Basic realm="Please enter a password and/or a nickname. Set your password to anon to post anonymously.`)
+	w.Header().Set("WWW-Authenticate", `Basic realm="Please enter a password to use as your login, nicknames are optional. Set your password to anon to post anonymously.`)
 	user, pass, _ := r.BasicAuth()
 	if pass == "" && len(user) <= 64 {
-		http.Error(w, `Please enter a password and/or a nickname. Set your password to anon to post anonymously.`, http.StatusUnauthorized)
+		http.Error(w, `Please enter a password to use as your login, nicknames are optional. Set your password to anon to post anonymously.`, http.StatusUnauthorized)
 		return "Error", ""
+	}
+
+	if user == "anon" {
+		user = ""
 	}
 
 	if pass == "anon" {
@@ -69,23 +69,12 @@ func addHeaders(w http.ResponseWriter, r *http.Request) {
 }
 
 func mainHandle(w http.ResponseWriter, r *http.Request) {
-	ip := r.Header.Get("X-Forwarded-For")
-	if ip == "" {
-		ip = r.RemoteAddr
-	}
-
-	i := sort.SearchStrings(banList, ip)
-	if i < len(banList) && banList[i] == ip {
-		http.Error(w, "You have been banned from KatBoard.", http.StatusForbidden)
-	}
-
 	user, userid := runAuth(w, r)
 	if user == "Error" {
 		return
 	}
 
 	addHeaders(w, r)
-	fmt.Println("Request (" + ip + " - " + userid + ") : " + r.URL.String())
 
 	switch {
 	case strings.HasSuffix(r.URL.EscapedPath(), "/messagesocket"):
@@ -94,10 +83,14 @@ func mainHandle(w http.ResponseWriter, r *http.Request) {
 			msg = 8
 		}
 
-		serveWs(w, r, template.HTMLEscapeString(user), userid, checkBoard(r.URL.Query().Get("board")), msg-1)
+		board := checkBoard(r.URL.Query().Get("board"))
+		fmt.Println("User " + userid + " has connected to " + board[12:len(board)-4])
+		serveWs(w, r, template.HTMLEscapeString(user), userid, board, msg-1)
+
 	case strings.HasSuffix(r.URL.EscapedPath(), "/newboard"):
 		w.Header().Set("Cache-Control", "no-store, must-revalidate")
 		newBoard(w, r, userid)
+		fmt.Println("User " + userid + " has created a new board.")
 	default:
 		serveFile(w, r, "data/index.html")
 		w.Header().Set("Cache-Control", "max-age=172800, public, stale-while-revalidate=86400")
@@ -106,15 +99,10 @@ func mainHandle(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	content, err := ioutil.ReadFile("data/iplist.txt")
-	if err == nil {
-		banList = strings.Split(string(content), "\n")
-		sort.Strings(banList)
-	}
 	debug.SetGCPercent(600)
 
 	srv := &http.Server{
-		Addr:         ":8080",
+		Addr:         "localhost:8081",
 		Handler:      http.HandlerFunc(mainHandle),
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
