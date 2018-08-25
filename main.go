@@ -91,6 +91,9 @@ func mainHandle(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Cache-Control", "no-store, must-revalidate")
 		newBoard(w, r, userid)
 		fmt.Println("User " + userid + " has created a new board.")
+	case strings.HasSuffix(r.URL.EscapedPath(), "/favicon.ico"):
+		w.WriteHeader(http.StatusNotFound)
+		return
 	default:
 		serveFile(w, r, "data/index.html")
 		w.Header().Set("Cache-Control", "max-age=172800, public, stale-while-revalidate=86400")
