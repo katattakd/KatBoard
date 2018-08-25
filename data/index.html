@@ -2,32 +2,34 @@
 <html>
 <head>
 	<meta content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=5" name="viewport">
-
 	<style>body{font-family:Segoe UI,Arial,sans-serif;color:#fff;background-color:#0f0f0f;margin:0;word-wrap:break-word}button{padding:3px 6px}h4{color:#7c2d2d!important}input,p{color:#cdcdcd!important;overflow:auto}img,video{width:25%}img:active,video:active{width:50%}audio,img,video{float:left;padding-right:8px;padding-bottom:8px}a,button{text-decoration:none;color:#6e6e95!important}input{border-bottom:1px solid rgba(0,0,0,.12)!important;transition:border-bottom-color .2s;background-color:#282828!important;box-sizing:border-box;padding-left:4px;width:100%}input:focus{border-bottom:1px solid #f44336!important}.post,button{background-color:#1c1c1c}button,input{font:inherit;outline:0;border:0}.post{border:3px solid #1c1c1c;border-radius:2px;box-shadow:0 2px 2px 0 rgba(0,0,0,.14),0 3px 1px -2px rgba(0,0,0,.2),0 1px 5px 0 rgba(0,0,0,.12)}#post{padding-left:8px;padding-right:8px}.topbar{padding:10px;border-bottom:1px solid #000;background-color:#1c1c1c;display:none}.posts{padding-left:18%;padding-right:18%}.time{float:right;color:#999!important;font-size:12px}@media screen and (max-width:800px){.posts{padding-left:20px;padding-right:20px}img:active,video:active{width:100%}}</style>
-
 	<title>KatBoard Beta</title>
-
+	<script>!function(a,b){"function"==typeof define&&define.amd?define([],b):"undefined"!=typeof module&&module.exports?module.exports=b():a.ReconnectingWebSocket=b()}(this,function(){function a(b,c,d){function l(a,b){var c=document.createEvent("CustomEvent");return c.initCustomEvent(a,!1,!1,b),c}var e={debug:!1,automaticOpen:!0,reconnectInterval:1e3,maxReconnectInterval:3e4,reconnectDecay:1.5,timeoutInterval:2e3};d||(d={});for(var f in e)this[f]="undefined"!=typeof d[f]?d[f]:e[f];this.url=b,this.reconnectAttempts=0,this.readyState=WebSocket.CONNECTING,this.protocol=null;var h,g=this,i=!1,j=!1,k=document.createElement("div");k.addEventListener("open",function(a){g.onopen(a)}),k.addEventListener("close",function(a){g.onclose(a)}),k.addEventListener("connecting",function(a){g.onconnecting(a)}),k.addEventListener("message",function(a){g.onmessage(a)}),k.addEventListener("error",function(a){g.onerror(a)}),this.addEventListener=k.addEventListener.bind(k),this.removeEventListener=k.removeEventListener.bind(k),this.dispatchEvent=k.dispatchEvent.bind(k),this.open=function(b){h=new WebSocket(g.url,c||[]),b||k.dispatchEvent(l("connecting")),(g.debug||a.debugAll)&&console.debug("ReconnectingWebSocket","attempt-connect",g.url);var d=h,e=setTimeout(function(){(g.debug||a.debugAll)&&console.debug("ReconnectingWebSocket","connection-timeout",g.url),j=!0,d.close(),j=!1},g.timeoutInterval);h.onopen=function(){clearTimeout(e),(g.debug||a.debugAll)&&console.debug("ReconnectingWebSocket","onopen",g.url),g.protocol=h.protocol,g.readyState=WebSocket.OPEN,g.reconnectAttempts=0;var d=l("open");d.isReconnect=b,b=!1,k.dispatchEvent(d)},h.onclose=function(c){if(clearTimeout(e),h=null,i)g.readyState=WebSocket.CLOSED,k.dispatchEvent(l("close"));else{g.readyState=WebSocket.CONNECTING;var d=l("connecting");d.code=c.code,d.reason=c.reason,d.wasClean=c.wasClean,k.dispatchEvent(d),b||j||((g.debug||a.debugAll)&&console.debug("ReconnectingWebSocket","onclose",g.url),k.dispatchEvent(l("close")));var e=g.reconnectInterval*Math.pow(g.reconnectDecay,g.reconnectAttempts);setTimeout(function(){g.reconnectAttempts++,g.open(!0)},e>g.maxReconnectInterval?g.maxReconnectInterval:e)}},h.onmessage=function(b){(g.debug||a.debugAll)&&console.debug("ReconnectingWebSocket","onmessage",g.url,b.data);var c=l("message");c.data=b.data,k.dispatchEvent(c)},h.onerror=function(b){(g.debug||a.debugAll)&&console.debug("ReconnectingWebSocket","onerror",g.url,b),k.dispatchEvent(l("error"))}},1==this.automaticOpen&&this.open(!1),this.send=function(b){if(h)return(g.debug||a.debugAll)&&console.debug("ReconnectingWebSocket","send",g.url,b),h.send(b);throw"INVALID_STATE_ERR : Pausing to reconnect websocket"},this.close=function(a,b){"undefined"==typeof a&&(a=1e3),i=!0,h&&h.close(a,b)},this.refresh=function(){h&&h.close()}}return a.prototype.onopen=function(){},a.prototype.onclose=function(){},a.prototype.onconnecting=function(){},a.prototype.onmessage=function(){},a.prototype.onerror=function(){},a.debugAll=!1,a.CONNECTING=WebSocket.CONNECTING,a.OPEN=WebSocket.OPEN,a.CLOSING=WebSocket.CLOSING,a.CLOSED=WebSocket.CLOSED,a});</script>
 	<script>
 	var messageSocket
 
 	function load() {
 
 
-	messageSocket = new ReconnectingWebSocket("wss://" + window.location.host + window.location.pathname + "/messagesocket" + window.location.search);
-
+	if (location.protocol == 'https:') {
+		messageSocket = new ReconnectingWebSocket("wss://" + window.location.host + window.location.pathname + "/messagesocket" + window.location.search);
+	} else {
+		messageSocket = new ReconnectingWebSocket("ws://" + window.location.host + window.location.pathname + "/messagesocket" + window.location.search);
+	}
+	messageSocket.reconnectInterval = 500;
+	messageSocket.reconnectDecay = 1;
+	messageSocket.maxReconnectInterval = 500;
+	messageSocket.timeoutInterval = 1000;
 	messageSocket.onopen = function(event) {
 		document.getElementById("posts").innerHTML = '<div class="post" id="post"><p>Loading posts...</p></div>';
 		document.getElementById("topbar").style.display = "flex";
 	}
-
 	messageSocket.onmessage = function(event) {
-		var message = event.data;
-		document.getElementById("posts").innerHTML = message;
+		document.getElementById("posts").innerHTML = event.data;
 		if (window.location.search == "") {
 			document.getElementById("posts").innerHTML += '<div class="post" id="post"><p><a href="' + window.location.href + '/newboard">Click here to create a new board!</a></p></div><br>';
 		}
 	};
-
 	messageSocket.onclose = function(event) {
 		document.getElementById("posts").innerHTML = '<div class="post" id="post"><h4>Error : You have been disconnected from the server.</h4><p>Attempting to reconnect...</p></div><br>';
 		document.getElementById("topbar").style.display = "none";
@@ -37,12 +39,10 @@
 	}
 
 	function send() {
-		var text = document.getElementById("text").value;
-		messageSocket.send(text);
+		messageSocket.send(document.getElementById("text").value);
 		document.getElementById("text").value = "";
 	}
 	</script>
-	<script defer src="https://cdn.kittyhacker101.tk/Static/wsreconnect.js"></script>
 </head>
 <body onload="load()">
 	<div id="topbar" class="topbar">
@@ -53,7 +53,7 @@
 	<div id="posts" class="posts">
 		<div class="post l"><p>Waiting for network connection...</p></div>
 		<noscript>
-			<div class="post" id="post"><h4>Sorry, but KatBoard requires JavaScript to work properly.</h4></div>
+			<div class="post" id="post"><h4>Please enable JavaScript for KatBoard to work properly.</h4></div>
 			<style>.l {display: none}</style>
 		</noscript>
 	</div>
