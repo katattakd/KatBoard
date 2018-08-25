@@ -8,9 +8,6 @@
 	<script>
 	var messageSocket
 
-	function load() {
-
-
 	if (location.protocol == 'https:') {
 		messageSocket = new ReconnectingWebSocket("wss://" + window.location.host + window.location.pathname + "/messagesocket" + window.location.search);
 	} else {
@@ -35,16 +32,13 @@
 		document.getElementById("topbar").style.display = "none";
 	};
 
-
-	}
-
 	function send() {
 		messageSocket.send(document.getElementById("text").value);
 		document.getElementById("text").value = "";
 	}
 	</script>
 </head>
-<body onload="load()">
+<body>
 	<div id="topbar" class="topbar">
 		<input id="text" onkeydown="if (event.keyCode == 13) {send()}" placeholder="Type something to post..." type="text">
 		<button onclick="send()" type="button">Send</button>
