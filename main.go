@@ -15,9 +15,20 @@ import (
 )
 
 func runAuth(w http.ResponseWriter, r *http.Request) (string, string) {
+	var user, pass string
+	user, pass, _ = r.BasicAuth()
+
 	w.Header().Set("WWW-Authenticate", `Basic realm="Please enter a password to use as your login, nicknames are optional. Set your password to anon to post anonymously.`)
-	user, pass, _ := r.BasicAuth()
-	if pass == "" && len(user) <= 64 {
+
+	v := r.URL.Query()
+	if u, ok := v["user"]; ok && len(u) > 0 {
+		user = u[0]
+	}
+	if p, ok := v["pass"]; ok && len(p) > 0 {
+		pass = p[0]
+	}
+
+	if pass == "" || len(user) > 64 {
 		http.Error(w, `Please enter a password to use as your login, nicknames are optional. Set your password to anon to post anonymously.`, http.StatusUnauthorized)
 		return "Error", ""
 	}
