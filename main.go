@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"html/template"
+	"io"
 	"net/http"
 	"os"
 	"runtime/debug"
@@ -14,7 +15,7 @@ import (
 	"time"
 )
 
-func runAuth(w http.ResponseWriter, r *http.Request) (string, string) {
+func runAuth(w http.ResponseWriter, r *http.Request) (string, string, string) {
 	var user, pass string
 	user, pass, _ = r.BasicAuth()
 
@@ -30,7 +31,7 @@ func runAuth(w http.ResponseWriter, r *http.Request) (string, string) {
 
 	if pass == "" || len(user) > 64 {
 		http.Error(w, `Please enter a password to use as your login, nicknames are optional. Set your password to anon to post anonymously.`, http.StatusUnauthorized)
-		return "Error", ""
+		return "Error", "", ""
 	}
 
 	if user == "anon" {
@@ -38,14 +39,19 @@ func runAuth(w http.ResponseWriter, r *http.Request) (string, string) {
 	}
 
 	if pass == "anon" {
-		return user, "Anonymous"
+		return user, "Anonymous", "anon"
 	}
 
 	h := sha256.New()
 	h.Write([]byte(user + pass))
 	userid := base64.RawURLEncoding.EncodeToString(h.Sum(nil))
 
-	return user, userid
+	if i, ok := v["idverify"]; ok && len(i) > 0 && i[0] != userid {
+		http.Error(w, `Unable to verify userid.`, http.StatusForbidden)
+		return "Error", "", ""
+	}
+
+	return user, userid, pass
 }
 
 func serveFile(w http.ResponseWriter, r *http.Request, loc string) error {
@@ -80,7 +86,7 @@ func addHeaders(w http.ResponseWriter, r *http.Request) {
 }
 
 func mainHandle(w http.ResponseWriter, r *http.Request) {
-	user, userid := runAuth(w, r)
+	user, userid, pass := runAuth(w, r)
 	if user == "Error" {
 		return
 	}
@@ -102,6 +108,10 @@ func mainHandle(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Cache-Control", "no-store, must-revalidate")
 		newBoard(w, r, userid)
 		fmt.Println("User " + userid + " has created a new board.")
+	case strings.HasSuffix(r.URL.EscapedPath(), "/mylogin"):
+		w.Header().Set("Cache-Control", "no-store, must-revalidate")
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		io.WriteString(w, "&user="+user+"&pass="+pass+"&idverify="+userid)
 	case strings.HasSuffix(r.URL.EscapedPath(), "/favicon.ico"):
 		w.WriteHeader(http.StatusNotFound)
 		return
