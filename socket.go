@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/gorilla/websocket"
 	"html/template"
 	"net/http"
@@ -36,19 +37,14 @@ func serveWs(w http.ResponseWriter, r *http.Request, user string, userid string,
 	}
 
 	c.SetReadLimit(512)
-	c.SetReadDeadline(time.Now().Add(60 * time.Second))
-	c.SetPongHandler(func(string) error { c.SetReadDeadline(time.Now().Add(60 * time.Second)); return nil })
+	c.SetPongHandler(func(string) error { c.SetReadDeadline(time.Now().Add(15 * time.Second)); return nil })
 	c.EnableWriteCompression(true)
 	c.SetCompressionLevel(9)
-	pingTicker := time.NewTicker(54 * time.Second)
+	done := make(chan struct{})
+	pingTicker := time.NewTicker(5 * time.Second)
 	fileTicker := time.NewTicker(time.Duration(msg*60) * time.Millisecond)
 
-	defer func() {
-		c.Close()
-		pingTicker.Stop()
-		file.Close()
-		ufile.Close()
-	}()
+	defer close(done)
 
 	go func() {
 		for {
@@ -57,17 +53,21 @@ func serveWs(w http.ResponseWriter, r *http.Request, user string, userid string,
 				content := getPostContent(file, msg)
 				if content != lastcontent {
 					c.SetWriteDeadline(time.Now().Add(10 * time.Second))
-					if err := c.WriteMessage(websocket.TextMessage, []byte(content)); err != nil {
-						return
-					}
-
+					c.WriteMessage(websocket.TextMessage, []byte(content))
 					lastcontent = content
 				}
 			case <-pingTicker.C:
 				c.SetWriteDeadline(time.Now().Add(10 * time.Second))
-				if err := c.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
-					return
-				}
+				c.WriteMessage(websocket.PingMessage, []byte{})
+			case <-done:
+				websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure)
+				c.Close()
+				file.Close()
+				ufile.Close()
+				fileTicker.Stop()
+				pingTicker.Stop()
+				fmt.Println("User " + userid + " has disconnected from " + path[12:len(path)-4])
+				return
 			}
 		}
 	}()
