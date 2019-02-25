@@ -1,10 +1,8 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"github.com/gorilla/websocket"
-	"html/template"
 	"net/http"
 	"os"
 	"time"
@@ -79,11 +77,6 @@ func serveWs(w http.ResponseWriter, r *http.Request, user string, userid string,
 			break
 		}
 
-		message := template.HTMLEscapeString(string(bytes.TrimSpace(bytes.Replace(messageraw, []byte{'\n'}, []byte{' '}, -1))))
-		tstamp := time.Now().UTC().Format(time.UnixDate)
-		if len(message) <= 512 && len(message) > 1 && len(user) <= 64 {
-			file.WriteString(userid + "<" + user + "<" + message + "<" + tstamp + "\n")
-		}
-		time.Sleep(100 * time.Millisecond)
+		writeMsg(file, userid, user, messageraw)
 	}
 }

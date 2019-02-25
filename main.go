@@ -46,11 +46,6 @@ func runAuth(w http.ResponseWriter, r *http.Request) (string, string, string) {
 	h.Write([]byte(user + pass))
 	userid := base64.RawURLEncoding.EncodeToString(h.Sum(nil))
 
-	if i, ok := v["idverify"]; ok && len(i) > 0 && i[0] != userid {
-		http.Error(w, `Unable to verify userid.`, http.StatusForbidden)
-		return "Error", "", ""
-	}
-
 	return user, userid, pass
 }
 
@@ -103,15 +98,33 @@ func mainHandle(w http.ResponseWriter, r *http.Request) {
 		board := checkBoard(r.URL.Query().Get("board"))
 		fmt.Println("User " + userid + " has connected to " + board[12:len(board)-4])
 		serveWs(w, r, template.HTMLEscapeString(user), userid, board, msg-1)
-
 	case strings.HasSuffix(r.URL.EscapedPath(), "/newboard"):
 		w.Header().Set("Cache-Control", "no-store, must-revalidate")
 		newBoard(w, r, userid)
 		fmt.Println("User " + userid + " has created a new board.")
+	case strings.HasSuffix(r.URL.EscapedPath(), "/getboardmsgs"):
+		w.Header().Set("Cache-Control", "no-store, must-revalidate")
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		f, err := os.Open(checkBoard(r.URL.Query().Get("board")))
+		if err != nil {
+			io.WriteString(w, `<div class="post" id="post"><h4>Error : Unable to read board posts.</h4><p>Please try again later.</p></div><br>`)
+		}
+		io.WriteString(w, getPostContent(f, 4))
+		f.Close()
+	case strings.HasSuffix(r.URL.EscapedPath(), "/sendboardmsg"):
+		w.Header().Set("Cache-Control", "no-store, must-revalidate")
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		f, err := os.OpenFile(checkBoard(r.URL.Query().Get("board")), os.O_APPEND|os.O_RDWR, 0600)
+		if err != nil {
+			io.WriteString(w, "Unable to send message!")
+		}
+		writeMsg(f, userid, user, []byte(r.URL.Query().Get("msg")))
+		f.Close()
+		io.WriteString(w, "Message sent.")
 	case strings.HasSuffix(r.URL.EscapedPath(), "/mylogin"):
 		w.Header().Set("Cache-Control", "no-store, must-revalidate")
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		io.WriteString(w, "&user="+user+"&pass="+pass+"&idverify="+userid)
+		io.WriteString(w, "&user="+user+"&pass="+pass)
 	case strings.HasSuffix(r.URL.EscapedPath(), "/favicon.ico"):
 		w.WriteHeader(http.StatusNotFound)
 		return

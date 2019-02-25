@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"crypto/rand"
 	"encoding/base64"
 	"github.com/serverhorror/rog-go/reverse"
+	"html/template"
 	"io/ioutil"
 	"mvdan.cc/xurls"
 	"net/http"
@@ -100,6 +102,14 @@ func getPostContent(file *os.File, msg int) string {
 		}
 	}
 	return post
+}
+
+func writeMsg(file *os.File, userid, user string, messageraw []byte) {
+	message := template.HTMLEscapeString(string(bytes.TrimSpace(bytes.Replace(messageraw, []byte{'\n'}, []byte{' '}, -1))))
+	tstamp := time.Now().UTC().Format(time.UnixDate)
+	if len(message) <= 512 && len(message) > 1 && len(user) <= 64 {
+		file.WriteString(userid + "<" + user + "<" + message + "<" + tstamp + "\n")
+	}
 }
 
 func checkBoard(board string) string {
