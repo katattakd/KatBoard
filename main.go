@@ -107,7 +107,8 @@ func mainHandle(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		f, err := os.Open(checkBoard(r.URL.Query().Get("board")))
 		if err != nil {
-			io.WriteString(w, `<div class="post" id="post"><h4>Error : Unable to read board posts.</h4><p>Please try again later.</p></div><br>`)
+			io.WriteString(w, `<div id="post"><h4>Error : Unable to read board posts.</h4><p>Please try again later.</p></div><br>`)
+			return
 		}
 		io.WriteString(w, getPostContent(f, 4))
 		f.Close()
@@ -117,10 +118,22 @@ func mainHandle(w http.ResponseWriter, r *http.Request) {
 		f, err := os.OpenFile(checkBoard(r.URL.Query().Get("board")), os.O_APPEND|os.O_RDWR, 0600)
 		if err != nil {
 			io.WriteString(w, "Unable to send message!")
+			return
 		}
 		writeMsg(f, userid, user, []byte(r.URL.Query().Get("msg")))
 		f.Close()
 		io.WriteString(w, "Message sent.")
+	case strings.HasSuffix(r.URL.EscapedPath(), "/sendboardmsgif"):
+		w.Header().Set("Cache-Control", "no-store, must-revalidate")
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		io.WriteString(w, `<form action="/sendboardmsgif" method="get"><input name="board" autocomplete="on" placeholder="Board ID" type="text"><input name="msg" autocomplete="off" placeholder="Type something to post..." type="text">
+		<input type="submit" value="Send Message"></form>`)
+		f, err := os.OpenFile(checkBoard(r.URL.Query().Get("board")), os.O_APPEND|os.O_RDWR, 0600)
+		if err != nil {
+			return
+		}
+		writeMsg(f, userid, user, []byte(r.URL.Query().Get("msg")))
+		f.Close()
 	case strings.HasSuffix(r.URL.EscapedPath(), "/mylogin"):
 		w.Header().Set("Cache-Control", "no-store, must-revalidate")
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")

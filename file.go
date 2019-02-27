@@ -38,7 +38,7 @@ func getPostContent(file *os.File, msg int) string {
 	if err == nil && fi.Size() > 10000 {
 		input, err := ioutil.ReadFile("data/boards/" + fi.Name())
 		if err != nil {
-			return `<div class="post" id="post"><h4>Error : Unable to read board posts.</h4><p>Please try again later.</p></div><br>`
+			return `<div id="post"><h4>Error : Unable to read board posts.</h4><p>Please try again later.</p></div><br>`
 		}
 
 		output := input[200:]
@@ -95,7 +95,7 @@ func getPostContent(file *os.File, msg int) string {
 			}
 		}
 
-		post = post + `<div class="post" id="post"><p class="time">` + tstamp + `</p><h4>` + header + `</h4><p>` + message + `</p></div><br>` + "\n"
+		post = post + `<div id="post"><p class="time">` + tstamp + `</p><h4>` + header + `</h4><p>` + message + `</p></div><br>` + "\n"
 		i = i + 1
 		if i > msg {
 			break
